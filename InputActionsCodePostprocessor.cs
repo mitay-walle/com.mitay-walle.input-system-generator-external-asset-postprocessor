@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 
-namespace Outcasts.Editor
+namespace mitaywalle.Input
 {
 	public class InputActionsCodePostprocessor : AssetPostprocessor
 	{
@@ -14,6 +14,8 @@ namespace Outcasts.Editor
 		private const string DisposeOriginal = "        public void Dispose()\n        {\n            UnityEngine.Object.Destroy(asset);\n        }";
 		private const string DisposeWithEmbeddedGuard =
 			"        public void Dispose()\n        {\n            if (_isEmbeddedAsset)\n            {\n                UnityEngine.Object.Destroy(asset);\n            }\n        }";
+		private const string DisposeWithDisable =
+			"        public void Dispose()\n        {\n            Disable();\n\n            if (_isEmbeddedAsset)\n            {\n                UnityEngine.Object.Destroy(asset);\n            }\n        }";
 
 		private static readonly Regex ClassRegex = new("public partial class @(?<className>[A-Za-z_][A-Za-z0-9_]*)\\s*:", RegexOptions.Compiled);
 
@@ -78,7 +80,10 @@ namespace Outcasts.Editor
 				result = AddExternalAssetConstructor(result, className);
 
 			if (result.Contains(DisposeOriginal))
-				result = result.Replace(DisposeOriginal, DisposeWithEmbeddedGuard);
+				result = result.Replace(DisposeOriginal, DisposeWithDisable);
+
+			if (result.Contains(DisposeWithEmbeddedGuard))
+				result = result.Replace(DisposeWithEmbeddedGuard, DisposeWithDisable);
 
 			return result;
 		}
